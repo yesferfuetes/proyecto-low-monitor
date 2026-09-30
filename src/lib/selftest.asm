@@ -13,6 +13,8 @@ default rel
 
 %include "lib.inc"
 
+extern cpu_detect, cpu_features
+
 GRANDE_BYTES        equ 10000         ; supera el buffer de 4 KiB más de 2 veces
 
 ; =============================================================================
@@ -36,6 +38,7 @@ STR k_muldiv,     "muldiv="
 STR k_streq,      "streq="
 STR k_tsc,        "tsc="
 STR k_sleep,      "sleep="
+STR k_cpudetect,  "cpudetect="
 STR v_ok,         "ok"
 STR v_falla,      "FALLA"
 
@@ -197,6 +200,19 @@ selftest_run:
     call    mono_ns
     sub     rax, rbx                    ; ns transcurridos
     cmp     rax, 20000000
+    OK_SI_AE
+
+    ; ---- cpu_detect es idempotente: dos llamadas, mismas características -------
+    PRINT   k_cpudetect
+    call    cpu_detect
+    mov     rbx, [cpu_features]
+    call    cpu_detect
+    mov     rax, [cpu_features]
+    xor     rax, rbx                    ; 0 si no cambió
+    cmp     rax, 1                      ; sin signo: 0 < 1 -> "FALLA" si no es 0
+    setb    r12b
+    movzx   r12, r12b
+    cmp     r12, 1
     OK_SI_AE
 
     ; ---- salida grande: 10 000 '#' para probar el vaciado del buffer ------------

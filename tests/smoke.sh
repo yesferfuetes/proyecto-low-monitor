@@ -89,7 +89,8 @@ bool=Sí,No
 muldiv=1000000000000000000
 streq=1,0
 tsc=ok
-sleep=ok'
+sleep=ok
+cpudetect=ok'
 out="$("$BIN" _selftest)"; rc=$?
 obtenido="$(grep '=' <<<"$out")"
 if [ "$rc" -eq 0 ] && [ "$obtenido" = "$esperado" ]; then
@@ -102,7 +103,56 @@ n=$(tr -cd '#' <<<"$out" | wc -c | tr -d ' ')
 if [ "$n" -eq 10000 ]; then ok "salida mayor a 4 KiB completa (10000 bytes)"; else fail "salida mayor a 4 KiB completa (10000 bytes)" "obtenidos: $n"; fi
 
 # -----------------------------------------------------------------------------
-# (los módulos M1..M6 agregan aquí sus secciones)
+echo "== M1: identificación del CPU =="
+out="$("$BIN" cpu)"; rc=$?
+# campo "Etiqueta" -> valor de la línea "Etiqueta:   valor" de la salida
+campo() { awk -v k="$1:" 'index($0, k) == 1 { s = substr($0, length(k) + 1); sub(/^ +/, "", s); print s; exit }' <<<"$out"; }
+# info "clave" -> valor de /proc/cpuinfo (primer procesador)
+info() { awk -F': ' -v k="$1" '$1 ~ "^"k"[ \t]*$" { print $2; exit }' /proc/cpuinfo; }
+
+if [ "$rc" -eq 0 ]; then ok "código de salida 0"; else fail "código de salida 0" "rc=$rc"; fi
+faltan=""
+for et in "Fabricante" "Procesador" "Arquitectura" "Familia" "Modelo" "Stepping" "Hilos lógicos" \
+          "Características" "Extensiones" "AVX (SO)" "AVX-512 (SO)"; do
+    [ -n "$(campo "$et")" ] || faltan="$faltan [$et]"
+done
+if [ -z "$faltan" ]; then ok "todas las líneas presentes"; else fail "todas las líneas presentes" "faltan:$faltan"; fi
+if [ "$(campo Arquitectura)" = "x86_64" ]; then ok "arquitectura x86_64 (modo largo)"; else fail "arquitectura x86_64 (modo largo)" "$(campo Arquitectura)"; fi
+if [ "$(campo 'Hilos lógicos')" = "$(nproc)" ]; then ok "hilos lógicos = nproc ($(nproc))"; else fail "hilos lógicos = nproc" "$(campo 'Hilos lógicos') vs $(nproc)"; fi
+
+if ! grep -q '^vendor_id' /proc/cpuinfo; then
+    echo "  [OMITE] comparación con /proc/cpuinfo: el kernel no es x86 (¿emulación?)"
+elif [ "$(info vendor_id)" = "VirtualApple" ]; then
+    echo "  [OMITE] comparación con /proc/cpuinfo: emulación Rosetta (su /proc/cpuinfo no refleja CPUID)"
+else
+    v="$(info vendor_id)"
+    if [ "$(campo Fabricante)" = "$v" ]; then ok "fabricante = /proc/cpuinfo ($v)"; else fail "fabricante = /proc/cpuinfo" "$(campo Fabricante) vs $v"; fi
+    v="$(info 'model name')"
+    if [ "$(campo Procesador)" = "$v" ]; then ok "nombre comercial = /proc/cpuinfo"; else fail "nombre comercial = /proc/cpuinfo" "'$(campo Procesador)' vs '$v'"; fi
+    v="$(info 'cpu family')"
+    if [ "$(campo Familia | cut -d' ' -f1)" = "$v" ]; then ok "familia = /proc/cpuinfo ($v)"; else fail "familia = /proc/cpuinfo" "$(campo Familia) vs $v"; fi
+    v="$(info model)"
+    if [ "$(campo Modelo | cut -d' ' -f1)" = "$v" ]; then ok "modelo = /proc/cpuinfo ($v)"; else fail "modelo = /proc/cpuinfo" "$(campo Modelo) vs $v"; fi
+
+    flags=" $(info flags) "
+    ext=", $(campo Extensiones), "
+    difs=""
+    for par in sse:SSE sse2:SSE2 pni:SSE3 ssse3:SSSE3 sse4_1:SSE4.1 sse4_2:SSE4.2 avx:AVX fma:FMA \
+               avx2:AVX2 avx512f:AVX-512F avx512dq:AVX-512DQ avx512bw:AVX-512BW avx512vl:AVX-512VL; do
+        f="${par%%:*}"; n="${par#*:}"
+        en_kernel=0; [[ "$flags" == *" $f "* ]] && en_kernel=1
+        en_salida=0; [[ "$ext" == *", $n, "* ]] && en_salida=1
+        [ "$en_kernel" -eq "$en_salida" ] || difs="$difs $n(kernel=$en_kernel,lowmonitor=$en_salida)"
+    done
+    if [ -z "$difs" ]; then ok "extensiones = flags de /proc/cpuinfo"; else fail "extensiones = flags de /proc/cpuinfo" "$difs"; fi
+
+    if [[ "$flags" == *" hypervisor "* ]]; then
+        if [ -n "$(campo Hipervisor)" ]; then ok "hipervisor detectado ($(campo Hipervisor))"; else fail "hipervisor detectado" "falta la línea"; fi
+    fi
+fi
+
+# -----------------------------------------------------------------------------
+# (los módulos M2..M6 agregan aquí sus secciones)
 
 echo
 echo "Resultado: $PASS pasan, $FAIL fallan"

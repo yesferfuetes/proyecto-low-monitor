@@ -37,7 +37,7 @@ CMD_TAM             equ 24            ; tamaño de un registro de la tabla
 section .data
 ; Constantes, strings, tablas de datos
 ; =============================================================================
-STR msg_banner, "LowMonitor v0.1.0 - Diagnóstico y monitorización de hardware x86-64", 10
+STR msg_banner, "LowMonitor v0.2.0 - Diagnóstico y monitorización de hardware x86-64", 10
 STR msg_uso, "Uso: lowmonitor [todo|cpu|puertos|memoria|rendimiento|jerarquia|simd|ayuda]", 10
 STR msg_desconocido, "lowmonitor: comando desconocido: "
 STR msg_demasiados, "lowmonitor: se esperaba como máximo un argumento", 10
