@@ -1,0 +1,42 @@
+# CI — compila y ejecuta LowMonitor en Linux x86-64 en cada push/PR
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Instalar NASM
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq nasm
+
+      - name: Verificar herramientas
+        run: make check-tools
+
+      - name: Compilar (sin warnings)
+        run: |
+          make 2>&1 | tee build.log
+          if grep -qi 'warning' build.log; then echo "::error::La compilación emitió warnings"; exit 1; fi
+
+      - name: Pruebas (usuario regular)
+        run: make test
+
+      - name: Ejecutar con sudo (acceso real a puertos, M2)
+        run: sudo ./bin/lowmonitor todo || true
+
+      - name: Información del binario
+        run: make info
+
+      - name: Información del runner
+        run: lscpu | head -n 25
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: lowmonitor-elf64
+          path: bin/lowmonitor

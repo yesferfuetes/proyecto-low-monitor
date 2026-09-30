@@ -1,0 +1,36 @@
+# Release — al empujar un tag v*, publica el binario ELF64
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Instalar NASM
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq nasm
+
+      - name: Compilar release y probar
+        run: |
+          make clean
+          make DEBUG=0
+          make test
+
+      - name: Empaquetar
+        run: |
+          cp bin/lowmonitor lowmonitor
+          sha256sum lowmonitor > lowmonitor.sha256
+
+      - name: Crear release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" lowmonitor lowmonitor.sha256 \
+            --title "LowMonitor $GITHUB_REF_NAME" --generate-notes
