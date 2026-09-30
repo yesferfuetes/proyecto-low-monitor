@@ -1,0 +1,12 @@
+# Forzar LF: el repo se clona también desde Windows (WSL2) y CRLF rompe
+# make, bash y los strings de NASM.
+* text=auto eol=lf
+*.asm   text eol=lf
+*.inc   text eol=lf
+*.sh    text eol=lf
+Makefile text eol=lf
+*.md    text eol=lf
+
+*.pdf   binary
+*.png   binary
+*.jpg   binary

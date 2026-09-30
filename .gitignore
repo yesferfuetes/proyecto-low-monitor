@@ -1,0 +1,26 @@
+# Artefactos de compilación
+build/
+bin/
+*.o
+*.d
+*.lst
+
+# Enunciado (material del curso, no se versiona)
+docs/enunciado/
+
+# Depuración
+core
+core.*
+vgcore.*
+.gdb_history
+
+# Editor / SO
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+
+# Documentación de trabajo local (no se versiona)
+specs/
+CLAUDE.md
