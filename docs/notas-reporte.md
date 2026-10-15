@@ -48,6 +48,10 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
   menor que el real. Bajo Rosetta el TSC emulado va a ~1 GHz y el IPC aparente se infla (~5).
 - Observado en CI (runner con turbo): TSC 2.59 GHz mientras `cpu MHz` marcaba 4.2 GHz; el IPC de la cadena
   dependiente dio 2.04 ≈ 1.25 × (4.2 / 2.59): el TSC subestima los ciclos reales en la proporción del turbo.
+- *Immediate folding*: en un Xeon 8573C (Emerald Rapids) la cadena `add rax, 1` × 8 dio IPC 7.6, igual que la
+  carga independiente: desde Golden Cove Intel pliega las sumas de inmediatos encadenadas al renombrar, sin
+  pasar por la ALU. Con `add rax, rdx` (registro-registro) la dependencia vuelve a ser real (latencia 1).
+  En AMD Zen 3/5 no se observó el efecto.
 - Contadores PMU (`perf_event_open`, ciclos e instrucciones reales) se usan si el kernel lo permite; en
   Ubuntu `perf_event_paranoid=4` los niega a usuarios (`EACCES`) y en VMs suelen no existir.
 - _(completar con la salida real de WSL2: frecuencia, IPC de cada carga y GFLOPS)_
