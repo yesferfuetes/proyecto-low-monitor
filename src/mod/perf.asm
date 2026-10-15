@@ -22,7 +22,7 @@
 ; ciclos reales e instrucciones retiradas (perf_event_open).
 ;
 ; Cargas:
-;   dependiente   8 x `add rax, 1` encadenados: cada suma espera a la
+;   dependiente   8 x `add rax, rdx` encadenados: cada suma espera a la
 ;                 anterior (latencia 1) -> IPC cercano a 1.
 ;   independiente 8 sumas sobre 8 registros distintos: el núcleo fuera de
 ;                 orden las reparte entre sus ALUs -> IPC > 1 (ILP).
@@ -117,15 +117,20 @@ align 64
 carga_dependiente:
     mov     rcx, ITER
     xor     rax, rax
+    mov     rdx, 1                      ; sumando en un registro (ver nota abajo)
 .vuelta:
-    add     rax, 1                      ; cada add depende del resultado anterior:
-    add     rax, 1                      ; la cadena se ejecuta en serie
-    add     rax, 1
-    add     rax, 1
-    add     rax, 1
-    add     rax, 1
-    add     rax, 1
-    add     rax, 1
+    add     rax, rdx                    ; cada add depende del resultado anterior:
+    add     rax, rdx                    ; la cadena se ejecuta en serie
+    add     rax, rdx
+    add     rax, rdx
+    add     rax, rdx
+    add     rax, rdx
+    add     rax, rdx
+    add     rax, rdx
+    ; Nota: con `add rax, 1` los núcleos Intel desde Golden Cove pliegan las
+    ; sumas de inmediatos encadenadas en la etapa de renombrado (immediate
+    ; folding) y la cadena ya no espera a la ALU (se midió IPC 7.6 en un Xeon
+    ; Emerald Rapids). Una suma registro-registro no se puede plegar.
     dec     rcx
     jnz     .vuelta
     ret

@@ -29,6 +29,8 @@
     extern out_bool                     ; (rdi=0 -> "No", otro -> "Sí")
     extern out_flush                    ; () vacía el buffer en stdout
     extern out_errno                    ; (rdi=-errno) nombre del error
+    extern out_contador                 ; () -> rax = bytes emitidos
+    extern out_pad_hasta                ; (rdi=inicio, rsi=ancho) rellena
 %endif
 
 %ifndef UTIL_IMPL

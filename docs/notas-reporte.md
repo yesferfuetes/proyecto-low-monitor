@@ -48,11 +48,33 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
   menor que el real. Bajo Rosetta el TSC emulado va a ~1 GHz y el IPC aparente se infla (~5).
 - Observado en CI (runner con turbo): TSC 2.59 GHz mientras `cpu MHz` marcaba 4.2 GHz; el IPC de la cadena
   dependiente dio 2.04 ≈ 1.25 × (4.2 / 2.59): el TSC subestima los ciclos reales en la proporción del turbo.
+- *Immediate folding*: en un Xeon 8573C (Emerald Rapids) la cadena `add rax, 1` × 8 dio IPC 7.6, igual que la
+  carga independiente: desde Golden Cove Intel pliega las sumas de inmediatos encadenadas al renombrar, sin
+  pasar por la ALU. Con `add rax, rdx` (registro-registro) la dependencia vuelve a ser real (latencia 1).
+  En AMD Zen 3/5 no se observó el efecto.
 - Contadores PMU (`perf_event_open`, ciclos e instrucciones reales) se usan si el kernel lo permite; en
   Ubuntu `perf_event_paranoid=4` los niega a usuarios (`EACCES`) y en VMs suelen no existir.
 - _(completar con la salida real de WSL2: frecuencia, IPC de cada carga y GFLOPS)_
 
 ## M5 — Jerarquía de memoria
+
+- Tamaños de caché con CPUID (Intel hoja 4; AMD hoja 8000001Dh o 80000005h/6h).
+- Lista enlazada cíclica aleatoria (Sattolo + xorshift64) de nodos de 64 B: cada `mov rax, [rax]` depende
+  del anterior y el orden aleatorio anula el prefetcher → el tiempo por carga es la latencia del nivel.
+- Conjunto de trabajo de cada nivel entre su tamaño y el del anterior; buffers alineados a 2 MiB con
+  `MADV_HUGEPAGE` para que los fallos de TLB no inflen L3/RAM.
+- Dos mediciones: TSC alrededor de cada acceso (lo pedido; el costo de rdtsc/rdtscp es mayor que la latencia
+  de L1, por eso es ruidosa) y TSC alrededor de 10⁶ cargas (más precisa).
+- La L3 es compartida por todos los núcleos (y, en la nube, por otras VMs): en CI (Xeon 8370C, L3 48 MB,
+  VM de 2 vCPU) un conjunto de 25 MB midió ~260 ciclos, igual que RAM. Con 5 MB (4 × L2) la latencia de L3
+  se separa claramente de RAM. El conjunto de L3 se limita a 4 × L2.
+- Demostración de prefetch en RAM: recorrido aleatorio vs secuencial vs secuencial + `prefetcht0`.
+- Los "ciclos" son del TSC (frecuencia nominal); con turbo el núcleo hace más ciclos reales por ciclo TSC.
+- CI (AMD EPYC 7763, cadena): L1 3.1, L2 11.0, L3 34.4, RAM 212.3 ciclos TSC; RAM/L1 = 68x.
+- `prefetcht0` no mejora el recorrido secuencial (5.2 vs 4.8 ciclos/línea): el prefetcher de hardware ya
+  detecta el patrón secuencial y la instrucción extra sólo agrega costo. El prefetch por software rinde en
+  patrones que el hardware no puede predecir.
+- _(completar con la tabla real de WSL2 y una gráfica latencia vs nivel)_
 
 ## M6 — SIMD
 

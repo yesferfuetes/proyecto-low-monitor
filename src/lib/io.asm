@@ -69,6 +69,7 @@ section .bss align=64
 ; =============================================================================
 outbuf          resb OUTBUF_SIZE        ; buffer de salida (alineado a línea de caché)
 outpos          resq 1                  ; bytes ocupados en outbuf
+outtotal        resq 1                  ; bytes emitidos desde el inicio (para alinear columnas)
 numbuf          resb NUMBUF_SIZE        ; área temporal para convertir números
 
 ; =============================================================================
@@ -76,6 +77,7 @@ section .text
 ; =============================================================================
 global out_str, out_cstr, out_char, out_nl, out_spaces
 global out_u64, out_i64, out_hex, out_fixed, out_size, out_bool, out_flush, out_errno
+global out_contador, out_pad_hasta
 
 ; -----------------------------------------------------------------------------
 ; out_str — copia una cadena de longitud conocida al buffer de salida
@@ -107,6 +109,7 @@ out_str:
     mov     rsi, r12                    ; origen
     mov     rcx, rax                    ; contador para rep movsb
     add     [outpos], rax               ; actualizar ocupación
+    add     [outtotal], rax             ; y el total emitido
     add     r12, rax                    ; avanzar origen
     sub     r13, rax                    ; descontar pendientes
     rep     movsb                       ; copia rcx bytes [rsi] -> [rdi] (DF=0 por ABI)
@@ -151,6 +154,32 @@ out_char:
     mov     [rdx + rax], dil            ; escribir el byte en outbuf[outpos]
     inc     rax
     mov     [outpos], rax
+    inc     qword [outtotal]
+    ret
+
+; -----------------------------------------------------------------------------
+; out_contador — total de bytes emitidos desde el inicio del programa
+; Salidas  : rax = contador (no cambia al vaciar el buffer)
+; Uso      : inicio = out_contador(); imprimir campo; out_pad_hasta(inicio, ancho)
+; -----------------------------------------------------------------------------
+out_contador:
+    mov     rax, [outtotal]
+    ret
+
+; -----------------------------------------------------------------------------
+; out_pad_hasta — rellena con espacios hasta que el campo ocupe `ancho` bytes
+; Entradas : rdi = valor de out_contador al inicio del campo, rsi = ancho
+; Notas    : si el campo ya ocupa ancho o más, no imprime nada. Pensado para
+;            campos ASCII (los caracteres acentuados ocupan 2 bytes).
+; -----------------------------------------------------------------------------
+out_pad_hasta:
+    mov     rax, [outtotal]
+    sub     rax, rdi                    ; bytes ya escritos en el campo
+    sub     rsi, rax                    ; espacios que faltan
+    jle     .nada
+    mov     rdi, rsi
+    jmp     out_spaces
+.nada:
     ret
 
 ; -----------------------------------------------------------------------------
