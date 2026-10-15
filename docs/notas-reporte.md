@@ -61,6 +61,9 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
   `MADV_HUGEPAGE` para que los fallos de TLB no inflen L3/RAM.
 - Dos mediciones: TSC alrededor de cada acceso (lo pedido; el costo de rdtsc/rdtscp es mayor que la latencia
   de L1, por eso es ruidosa) y TSC alrededor de 10⁶ cargas (más precisa).
+- La L3 es compartida por todos los núcleos (y, en la nube, por otras VMs): en CI (Xeon 8370C, L3 48 MB,
+  VM de 2 vCPU) un conjunto de 25 MB midió ~260 ciclos, igual que RAM. Con 5 MB (4 × L2) la latencia de L3
+  se separa claramente de RAM. El conjunto de L3 se limita a 4 × L2.
 - Demostración de prefetch en RAM: recorrido aleatorio vs secuencial vs secuencial + `prefetcht0`.
 - Los "ciclos" son del TSC (frecuencia nominal); con turbo el núcleo hace más ciclos reales por ciclo TSC.
 - _(completar con la tabla real de WSL2 y una gráfica latencia vs nivel)_

@@ -701,8 +701,15 @@ mod_cache_run:
     mov     [trabajo + 16], rax         ; L2: entre L1 y L2
     mov     rax, [cache_l2]
     add     rax, [cache_l3]
-    shr     rax, 1
-    mov     [trabajo + 24], rax         ; L3: entre L2 y L3
+    shr     rax, 1                      ; L3: entre L2 y L3 ...
+    mov     rcx, [cache_l2]
+    shl     rcx, 2
+    cmp     rax, rcx
+    cmova   rax, rcx                    ; ... pero como mucho 4 x L2: la L3 es
+    mov     [trabajo + 24], rax         ; compartida y en un servidor con otros
+                                        ; procesos (o VMs) sólo una parte está
+                                        ; disponible; un conjunto más grande
+                                        ; terminaría midiendo RAM
     mov     rax, [cache_l3]
     shl     rax, 2                      ; RAM: 4 x L3 ...
     mov     rcx, RAM_MIN
