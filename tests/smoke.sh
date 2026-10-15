@@ -240,15 +240,17 @@ if [ "$rc" -eq 0 ]; then ok "código de salida 0"; else fail "código de salida 
 
 ghz="$(campo 'Frecuencia (TSC)' | cut -d' ' -f1)"
 if awk -v g="$ghz" 'BEGIN { exit !(g >= 0.5 && g <= 10) }'; then ok "frecuencia TSC razonable ($ghz GHz)"; else fail "frecuencia TSC razonable" "'$ghz'"; fi
-mhz="$(awk -F': ' '/^cpu MHz/ { print $2; exit }' /proc/cpuinfo)"
-if [ -n "$mhz" ] && [ "$(awk -F': ' '/^vendor_id/ { print $2; exit }' /proc/cpuinfo)" != "VirtualApple" ]; then
-    if awk -v g="$ghz" -v m="$mhz" 'BEGIN { d = g * 1000 - m; if (d < 0) d = -d; exit !(d <= m * 0.25) }'; then
-        ok "frecuencia TSC dentro de ±25% de cpu MHz ($mhz)"
+# Referencia: en x86 Linux calibra el TSC al arrancar y BogoMIPS = 2 x frecuencia del TSC.
+# ("cpu MHz" NO sirve: es la frecuencia actual del núcleo, con turbo.)
+bogo="$(awk -F': ' '/^bogomips/ { print $2; exit }' /proc/cpuinfo)"
+if [ -n "$bogo" ] && [ "$(awk -F': ' '/^vendor_id/ { print $2; exit }' /proc/cpuinfo)" != "VirtualApple" ]; then
+    if awk -v g="$ghz" -v b="$bogo" 'BEGIN { m = b / 2; d = g * 1000 - m; if (d < 0) d = -d; exit !(d <= m * 0.10) }'; then
+        ok "frecuencia TSC dentro de ±10% de BogoMIPS/2 ($bogo)"
     else
-        fail "frecuencia TSC dentro de ±25% de cpu MHz" "$ghz GHz vs $mhz MHz"
+        fail "frecuencia TSC dentro de ±10% de BogoMIPS/2" "$ghz GHz vs BogoMIPS $bogo"
     fi
 else
-    echo "  [OMITE] comparación con cpu MHz (no disponible o emulación)"
+    echo "  [OMITE] comparación con BogoMIPS (no disponible o emulación)"
 fi
 
 ipc_dep="$(campo 'Carga dependiente' | sed -E 's/.*IPC ([0-9.]+).*/\1/')"

@@ -46,6 +46,8 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
   → IPC ≈ 1 (latencia); 8 sumas independientes → IPC > 1 (paralelismo a nivel de instrucción, varias ALUs).
 - El TSC cuenta ciclos de referencia (frecuencia nominal), no del núcleo: con turbo el CPI "TSC" sale
   menor que el real. Bajo Rosetta el TSC emulado va a ~1 GHz y el IPC aparente se infla (~5).
+- Observado en CI (runner con turbo): TSC 2.59 GHz mientras `cpu MHz` marcaba 4.2 GHz; el IPC de la cadena
+  dependiente dio 2.04 ≈ 1.25 × (4.2 / 2.59): el TSC subestima los ciclos reales en la proporción del turbo.
 - Contadores PMU (`perf_event_open`, ciclos e instrucciones reales) se usan si el kernel lo permite; en
   Ubuntu `perf_event_paranoid=4` los niega a usuarios (`EACCES`) y en VMs suelen no existir.
 - _(completar con la salida real de WSL2: frecuencia, IPC de cada carga y GFLOPS)_
