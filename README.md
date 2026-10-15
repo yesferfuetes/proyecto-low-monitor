@@ -14,7 +14,7 @@ el rendimiento del CPU, la latencia de cada nivel de la jerarquía de memoria y 
 | M3 Diagnóstico de memoria | `memoria` | listo |
 | M4 Rendimiento del CPU | `rendimiento` | listo |
 | M5 Jerarquía de memoria | `jerarquia` | listo |
-| M6 Operaciones SIMD (bonus) | `simd` | pendiente |
+| M6 Operaciones SIMD (bonus) | `simd` | listo |
 
 ## Requisitos
 
