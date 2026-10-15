@@ -88,10 +88,6 @@ STR t_prot_segv,    "#GP capturado (SIGSEGV)"
 STR t_prot_bus,     "excepción capturada (SIGBUS)"
 STR t_prot_ill,     "instrucción no disponible (SIGILL)"
 STR t_prot_otra,    "excepción capturada (señal "
-STR t_errno,        "errno "
-STR t_eperm,        "EPERM"
-STR t_einval,       "EINVAL"
-STR t_enosys,       "ENOSYS"
 STR k_manejadores,  "manejadores="
 STR t_si_ok,        "ok"
 STR t_falla,        "FALLA"
@@ -283,35 +279,6 @@ sys_ioperm:
     mov     rax, SYS_IOPERM
     syscall
     ret
-
-; -----------------------------------------------------------------------------
-; out_errno — imprime el nombre de un error
-; Entradas : rdi = valor negativo devuelto por una syscall (-errno)
-; -----------------------------------------------------------------------------
-out_errno:
-    neg     rdi                         ; errno positivo
-    cmp     rdi, EPERM
-    je      .eperm
-    cmp     rdi, EINVAL
-    je      .einval
-    cmp     rdi, ENOSYS
-    je      .enosys
-    push    rdi
-    PRINT   t_errno
-    pop     rdi
-    jmp     out_u64
-.eperm:
-    lea     rdi, [t_eperm]
-    mov     rsi, t_eperm_len
-    jmp     out_str
-.einval:
-    lea     rdi, [t_einval]
-    mov     rsi, t_einval_len
-    jmp     out_str
-.enosys:
-    lea     rdi, [t_enosys]
-    mov     rsi, t_enosys_len
-    jmp     out_str
 
 ; -----------------------------------------------------------------------------
 ; out_protegido — imprime "[PROTEGIDO] <motivo según la señal>" y salto de línea

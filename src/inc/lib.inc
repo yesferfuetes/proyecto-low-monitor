@@ -28,6 +28,7 @@
     extern out_size                     ; (rdi=bytes)
     extern out_bool                     ; (rdi=0 -> "No", otro -> "Sí")
     extern out_flush                    ; () vacía el buffer en stdout
+    extern out_errno                    ; (rdi=-errno) nombre del error
 %endif
 
 %ifndef UTIL_IMPL
