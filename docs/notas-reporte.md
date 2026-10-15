@@ -15,6 +15,15 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
 
 ## M2 — Puertos E/S
 
+- Sin privilegios, `ioperm` devuelve `EPERM` (falta `CAP_SYS_RAWIO`) y cada `IN`/`OUT` produce #GP,
+  que el kernel entrega como `SIGSEGV`. El manejador propio redirige el RIP del `ucontext` a un punto
+  de recuperación: demuestra la protección de E/S del modo protegido sin abortar el programa.
+- Desde Linux 5.5 `iopl(3)` se emula con el bitmap de E/S del TSS: la llamada tiene éxito pero el campo
+  IOPL de RFLAGS sigue en 0 (se observa en la salida con `sudo`).
+- Bajo emulación Rosetta (Docker en Apple Silicon) `ioperm`/`iopl` devuelven `ENOSYS`.
+- En VMs (WSL2/Hyper-V, runners de CI) varios dispositivos legados no están emulados: `[NO PRESENTE]`.
+- _(completar con la salida real de WSL2 con y sin sudo)_
+
 ## M3 — Diagnóstico de memoria
 
 ## M4 — Rendimiento del CPU

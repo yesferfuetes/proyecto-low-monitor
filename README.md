@@ -10,7 +10,7 @@ el rendimiento del CPU, la latencia de cada nivel de la jerarquía de memoria y 
 | Módulo | Subcomando | Estado |
 |--------|------------|--------|
 | M1 Identificación del CPU | `cpu` | listo |
-| M2 Monitor de puertos E/S | `puertos` | pendiente |
+| M2 Monitor de puertos E/S | `puertos` | listo |
 | M3 Diagnóstico de memoria | `memoria` | pendiente |
 | M4 Rendimiento del CPU | `rendimiento` | pendiente |
 | M5 Jerarquía de memoria | `jerarquia` | pendiente |

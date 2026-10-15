@@ -58,7 +58,9 @@ MAP_ANONYMOUS       equ 0x20
 MAP_POPULATE        equ 0x8000        ; prefalla las páginas: memoria física real ya asignada
 
 ; ---- Señales / rt_sigaction ---------------------------------------------------
-SIGSEGV             equ 11
+SIGILL              equ 4             ; instrucción inválida (#UD)
+SIGBUS              equ 7             ; error de bus
+SIGSEGV             equ 11            ; violación de protección (#GP, #PF)
 SA_SIGINFO          equ 0x00000004    ; el handler recibe (signo, siginfo*, ucontext*)
 SA_RESTORER         equ 0x04000000    ; obligatorio en x86-64: indicamos nuestro trampolín
 SIG_DFL             equ 0
