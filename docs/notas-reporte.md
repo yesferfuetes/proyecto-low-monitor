@@ -66,6 +66,10 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
   se separa claramente de RAM. El conjunto de L3 se limita a 4 × L2.
 - Demostración de prefetch en RAM: recorrido aleatorio vs secuencial vs secuencial + `prefetcht0`.
 - Los "ciclos" son del TSC (frecuencia nominal); con turbo el núcleo hace más ciclos reales por ciclo TSC.
+- CI (AMD EPYC 7763, cadena): L1 3.1, L2 11.0, L3 34.4, RAM 212.3 ciclos TSC; RAM/L1 = 68x.
+- `prefetcht0` no mejora el recorrido secuencial (5.2 vs 4.8 ciclos/línea): el prefetcher de hardware ya
+  detecta el patrón secuencial y la instrucción extra sólo agrega costo. El prefetch por software rinde en
+  patrones que el hardware no puede predecir.
 - _(completar con la tabla real de WSL2 y una gráfica latencia vs nivel)_
 
 ## M6 — SIMD
