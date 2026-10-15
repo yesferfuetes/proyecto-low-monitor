@@ -322,7 +322,47 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# (el módulo M6 agrega aquí su sección)
+echo "== M6: operaciones SIMD =="
+out="$("$BIN" simd 2>&1)"; rc=$?
+cpu_out="$("$BIN" cpu 2>&1)"
+linea() { grep -m1 -F "$1" <<<"$out"; }
+emulado=0; [ "$(awk -F': ' '/^vendor_id/ { print $2; exit }' /proc/cpuinfo)" = "VirtualApple" ] && emulado=1
+if [ "$rc" -eq 0 ]; then ok "código de salida 0 (sin SIGILL)"; else fail "código de salida 0 (sin SIGILL)" "rc=$rc"; fi
+if ! grep -q '\[ERROR\]' <<<"$out" && [ "$(grep -c 'suma \[OK\]  mult \[OK\]  comp \[OK\]' <<<"$out")" -ge 1 ]; then
+    ok "ISAs disponibles: suma, mult y comp idénticas al escalar ($(grep -c 'comp \[OK\]' <<<"$out") ISAs)"
+else
+    fail "ISAs disponibles: suma, mult y comp idénticas al escalar" "$(grep -E 'lanes' <<<"$out" | tr '\n' '|')"
+fi
+
+# coherencia con M1: AVX2 disponible <=> extensión AVX2 + AVX (SO) habilitado; ídem AVX-512
+ext="$(grep '^Extensiones:' <<<"$cpu_out")"
+esp2=0; [[ "$ext" == *"AVX2"* ]] && grep -q '^AVX (SO): *Habilitado' <<<"$cpu_out" && esp2=1
+esp5=0; grep -q '^AVX-512 (SO): *Habilitado' <<<"$cpu_out" && esp5=1
+hay2=0; linea "AVX2 (256b" | grep -q 'Sí' && hay2=1
+hay5=0; linea "AVX-512 (512b" | grep -q 'Sí' && hay5=1
+if [ "$esp2" -eq "$hay2" ] && [ "$esp5" -eq "$hay5" ]; then ok "disponibilidad coherente con M1 (AVX2=$hay2, AVX-512=$hay5)"
+else fail "disponibilidad coherente con M1" "M1: AVX2=$esp2 AVX-512=$esp5 / M6: AVX2=$hay2 AVX-512=$hay5"; fi
+
+sp() { linea "$1" | sed -nE 's/.*x([0-9]+\.[0-9]+)$/\1/p'; }
+s_sse=$(sp "SSE2 (128b"); s_avx=$(sp "AVX2 (256b")
+if awk -v a="$s_sse" 'BEGIN { exit !(a > 1) }'; then ok "speedup SSE2 > 1 (x$s_sse)"; else fail "speedup SSE2 > 1" "x$s_sse"; fi
+if [ "$hay2" -eq 1 ]; then
+    if [ "$emulado" -eq 1 ]; then
+        echo "  [OMITE] AVX2 > SSE2: bajo Rosetta AVX se traduce a NEON de 128 bits"
+    elif awk -v a="$s_avx" -v b="$s_sse" 'BEGIN { exit !(a > b) }'; then ok "speedup AVX2 (x$s_avx) > SSE2 (x$s_sse)"
+    else fail "speedup AVX2 > SSE2" "x$s_avx vs x$s_sse"; fi
+fi
+if grep -qE '^Throughput: +(4|8|16) operaciones paralelas' <<<"$out" && grep -qE '^Benchmark: +[0-9]+\.[0-9]{2} GFLOPS' <<<"$out"; then
+    ok "resumen: throughput y benchmark"
+else
+    fail "resumen: throughput y benchmark"
+fi
+if grep -qE '^Escritura normal 64 MB: +[1-9][0-9]* MB/s' <<<"$out" && grep -qE '^Escritura NT 64 MB: +[1-9][0-9]* MB/s' <<<"$out"; then
+    ok "escritura normal vs non-temporal medida"
+else
+    fail "escritura normal vs non-temporal medida"
+fi
+
 
 echo
 echo "Resultado: $PASS pasan, $FAIL fallan"

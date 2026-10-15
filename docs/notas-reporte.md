@@ -78,6 +78,15 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
 
 ## M6 — SIMD
 
+- Suma, multiplicación y comparación sobre 2048 floats con escalar, SSE2 (XMM, 4 lanes), AVX2 (YMM, 8) y
+  AVX-512 (ZMM, 16, comparación en registro de máscara k1). Cada resultado vectorial se compara bit a bit con
+  el escalar (IEEE-754 da el mismo resultado por elemento sin importar el ancho).
+- Despacho por `cpu_features`: CPU + SO (XCR0). `vzeroupper` tras código AVX (penalización de transición).
+- Benchmark C = A·B + C (2 FLOP/elemento), desenrollado ×4, arreglos en L1; FMA (`vfmadd231ps`) aparte.
+- Escritura de 64 MB: store normal (lee cada línea antes de escribirla, RFO) vs `vmovntps`/`movntps` + `sfence`.
+- Bajo Rosetta AVX se traduce a NEON de 128 bits: AVX2 rinde casi igual que SSE2 (x6.8 vs x6.3).
+- _(completar con la salida real de WSL2: GFLOPS por ISA, speedup y MB/s normal vs NT)_
+
 ## Optimizaciones (antes / después)
 
 | Técnica | Dónde | Sin | Con | Mejora |
