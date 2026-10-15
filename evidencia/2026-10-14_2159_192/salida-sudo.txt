@@ -1,0 +1,3 @@
+$ sudo bin/lowmonitor todo
+bin/lowmonitor: bin/lowmonitor: cannot execute binary file
+[código de salida: 126]

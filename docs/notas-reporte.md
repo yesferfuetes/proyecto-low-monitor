@@ -84,6 +84,10 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
 - Despacho por `cpu_features`: CPU + SO (XCR0). `vzeroupper` tras código AVX (penalización de transición).
 - Benchmark C = A·B + C (2 FLOP/elemento), desenrollado ×4, arreglos en L1; FMA (`vfmadd231ps`) aparte.
 - Escritura de 64 MB: store normal (lee cada línea antes de escribirla, RFO) vs `vmovntps`/`movntps` + `sfence`.
+- CI (AMD EPYC 9V45, Zen 5, con AVX-512): escalar 5.92 GFLOPS; SSE2 x3.4, AVX2 x6.9, AVX-512 x14.6
+  (86.9 GFLOPS) — escala casi lineal con el ancho (ideal 4, 8, 16). FMA 256b ≈ AVX2 (41.3): con los datos en L1
+  el límite son las cargas/almacenamientos, no la cantidad de instrucciones aritméticas.
+  Escritura de 64 MB: normal 37.0 GB/s, non-temporal 43.8 GB/s (+18 %, sin lectura previa de cada línea).
 - Bajo Rosetta AVX se traduce a NEON de 128 bits: AVX2 rinde casi igual que SSE2 (x6.8 vs x6.3).
 - _(completar con la salida real de WSL2: GFLOPS por ISA, speedup y MB/s normal vs NT)_
 
