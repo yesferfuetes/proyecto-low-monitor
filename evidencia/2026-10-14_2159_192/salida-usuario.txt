@@ -1,3 +1,0 @@
-$ bin/lowmonitor todo
-scripts/evidencia.sh: line 34: bin/lowmonitor: cannot execute binary file
-[código de salida: 126]

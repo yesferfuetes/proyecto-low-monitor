@@ -10,6 +10,17 @@
 # =============================================================================
 set -u
 BIN="${1:-bin/lowmonitor}"
+
+# La evidencia sólo vale en Linux x86-64 (nativo o WSL2): en otro sistema el
+# binario no se ejecuta y sólo se guardarían errores.
+if [ "$(uname -s)" != "Linux" ] || [ "$(uname -m)" != "x86_64" ]; then
+    echo "evidencia: hay que ejecutarlo en Linux x86-64 (WSL2 o nativo); este sistema es $(uname -s) $(uname -m)." >&2
+    exit 1
+fi
+if ! "$BIN" ayuda >/dev/null 2>&1; then
+    echo "evidencia: $BIN no se pudo ejecutar; compile primero con 'make'." >&2
+    exit 1
+fi
 DIR="evidencia/$(date +%Y-%m-%d_%H%M)_$(hostname -s)"
 mkdir -p "$DIR"
 
