@@ -272,7 +272,57 @@ if grep -qE '^Contadores PMU: +(CPI [0-9]|no disponibles \()' <<<"$out"; then ok
 if grep -qE '^Ciclos totales: +[1-9][0-9]*$' <<<"$out"; then ok "ciclos totales > 0"; else fail "ciclos totales > 0"; fi
 
 # -----------------------------------------------------------------------------
-# (los módulos M5..M6 agregan aquí sus secciones)
+echo "== M5: jerarquía de memoria =="
+# fila "Nivel" columna n (1=tamaño ... ) desde la tabla; las etiquetas tienen 13 columnas visibles
+fila() { grep -m1 -E "^$1 +[-0-9]" <<<"$out" | sed -E "s/^$1 +//"; }
+# a_kb "48 KB" -> 48 ; "2 MB" -> 2048
+a_kb() { awk '{ u = 1; if ($2 == "MB") u = 1024; else if ($2 == "GB") u = 1048576; else if ($2 == "B") u = 1 / 1024; print $1 * u }' <<<"$1"; }
+emulado=0; [ "$(awk -F': ' '/^vendor_id/ { print $2; exit }' /proc/cpuinfo)" = "VirtualApple" ] && emulado=1
+
+intentos=0; monotono=0
+while [ "$intentos" -lt 3 ]; do
+    out="$("$BIN" jerarquia 2>&1)"; rc=$?
+    intentos=$((intentos + 1))
+    # columna "Cadena": último número de cada fila
+    cad() { fila "$1" | awk '{ print $NF }'; }
+    r=$(cad "Registros"); c1=$(cad "L1 caché"); c2=$(cad "L2 caché"); c3=$(cad "L3 caché"); cr=$(cad "RAM")
+    if awk -v a="$r" -v b="$c1" -v c="$c2" -v d="$c3" -v e="$cr" 'BEGIN { exit !(a < b && b < c && c < d && d < e) }'; then monotono=1; break; fi
+done
+if [ "$rc" -eq 0 ]; then ok "código de salida 0"; else fail "código de salida 0" "rc=$rc $(grep ERROR <<<"$out")"; fi
+if [ "$(grep -cE '^(Registros|L1 caché|L2 caché|L3 caché|RAM) +[-0-9]' <<<"$out")" -eq 5 ]; then ok "tabla con los 5 niveles"; else fail "tabla con los 5 niveles"; fi
+
+if [ "$emulado" -eq 1 ]; then
+    echo "  [OMITE] orden de latencias y tamaños: bajo Rosetta CPUID y la jerarquía real no coinciden"
+else
+    if [ "$monotono" -eq 1 ]; then ok "latencias crecientes Reg < L1 < L2 < L3 < RAM ($r < $c1 < $c2 < $c3 < $cr, intento $intentos)"
+    else fail "latencias crecientes Reg < L1 < L2 < L3 < RAM" "$r $c1 $c2 $c3 $cr"; fi
+    if awk -v a="$r" -v c="$c2" -v e="$cr" 'BEGIN { exit !(a <= 2 && e >= 3 * c) }'; then ok "registros <= 2 ciclos y RAM >= 3 x L2"
+    else fail "registros <= 2 ciclos y RAM >= 3 x L2" "reg=$r L2=$c2 RAM=$cr"; fi
+
+    # tamaños contra sysfs (index con level/type)
+    difs=""
+    for d in /sys/devices/system/cpu/cpu0/cache/index*; do
+        [ -d "$d" ] || continue
+        lvl=$(cat "$d/level"); typ=$(cat "$d/type")
+        [ "$typ" = "Instruction" ] && continue
+        kb_sys=$(sed 's/K$//' "$d/size")
+        tam="$(fila "L$lvl caché" | sed -E 's/^([0-9]+ [KMG]?B).*/\1/')"
+        kb_lm=$(a_kb "$tam")
+        [ "$kb_sys" = "$kb_lm" ] || difs="$difs L$lvl(sysfs=${kb_sys}K,lowmonitor=$tam)"
+    done
+    if [ -z "$difs" ]; then ok "tamaños L1d/L2/L3 = /sys/devices/system/cpu/cpu0/cache"; else fail "tamaños L1d/L2/L3 = sysfs" "$difs"; fi
+fi
+
+al=$(grep '^  Aleatorio' <<<"$out" | awk '{ print $NF }'); se=$(grep '^  Secuencial: ' <<<"$out" | awk '{ print $NF }')
+if awk -v a="$al" -v s="$se" 'BEGIN { exit !(a > s) }'; then ok "prefetch: aleatorio ($al) > secuencial ($se)"; else fail "prefetch: aleatorio > secuencial" "$al vs $se"; fi
+if grep -qE '^[[:space:]]+call[[:space:]]+tsc_begin' src/mod/cache.asm && grep -qE '^[[:space:]]+prefetcht0' src/mod/cache.asm; then
+    ok "TSC alrededor de cada acceso y PREFETCHT0 en el código"
+else
+    fail "TSC alrededor de cada acceso y PREFETCHT0 en el código"
+fi
+
+# -----------------------------------------------------------------------------
+# (el módulo M6 agrega aquí su sección)
 
 echo
 echo "Resultado: $PASS pasan, $FAIL fallan"

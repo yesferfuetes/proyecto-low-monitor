@@ -24,6 +24,7 @@ SYS_MUNMAP          equ 11
 SYS_RT_SIGACTION    equ 13
 SYS_RT_SIGRETURN    equ 15
 SYS_IOCTL           equ 16
+SYS_MADVISE         equ 28
 SYS_NANOSLEEP       equ 35
 SYS_EXIT            equ 60
 SYS_SYSINFO         equ 99
@@ -59,6 +60,7 @@ PROT_WRITE          equ 0x2
 MAP_PRIVATE         equ 0x02
 MAP_ANONYMOUS       equ 0x20
 MAP_POPULATE        equ 0x8000        ; prefalla las páginas: memoria física real ya asignada
+MADV_HUGEPAGE       equ 14            ; pedir páginas grandes (2 MiB) para la región
 
 ; ---- Señales / rt_sigaction ---------------------------------------------------
 SIGILL              equ 4             ; instrucción inválida (#UD)

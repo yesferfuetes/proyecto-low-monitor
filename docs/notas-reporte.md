@@ -54,6 +54,17 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
 
 ## M5 — Jerarquía de memoria
 
+- Tamaños de caché con CPUID (Intel hoja 4; AMD hoja 8000001Dh o 80000005h/6h).
+- Lista enlazada cíclica aleatoria (Sattolo + xorshift64) de nodos de 64 B: cada `mov rax, [rax]` depende
+  del anterior y el orden aleatorio anula el prefetcher → el tiempo por carga es la latencia del nivel.
+- Conjunto de trabajo de cada nivel entre su tamaño y el del anterior; buffers alineados a 2 MiB con
+  `MADV_HUGEPAGE` para que los fallos de TLB no inflen L3/RAM.
+- Dos mediciones: TSC alrededor de cada acceso (lo pedido; el costo de rdtsc/rdtscp es mayor que la latencia
+  de L1, por eso es ruidosa) y TSC alrededor de 10⁶ cargas (más precisa).
+- Demostración de prefetch en RAM: recorrido aleatorio vs secuencial vs secuencial + `prefetcht0`.
+- Los "ciclos" son del TSC (frecuencia nominal); con turbo el núcleo hace más ciclos reales por ciclo TSC.
+- _(completar con la tabla real de WSL2 y una gráfica latencia vs nivel)_
+
 ## M6 — SIMD
 
 ## Optimizaciones (antes / después)
