@@ -152,7 +152,50 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# (los módulos M2..M6 agregan aquí sus secciones)
+echo "== M2: puertos de E/S =="
+# verificar_puertos "contexto" salida rc
+verificar_puertos() {
+    local ctx="$1" out="$2" rc="$3"
+    local prot ok_np
+    prot=$(grep -c '\[PROTEGIDO\]' <<<"$out")
+    ok_np=$(grep -cE '\[(OK|NO PRESENTE)\]' <<<"$out")
+    if [ "$rc" -eq 0 ]; then ok "$ctx: código de salida 0 (sin abortar)"; else fail "$ctx: código de salida 0 (sin abortar)" "rc=$rc"; fi
+    if grep -q '^Permiso ioperm: *DENEGADO' <<<"$out"; then
+        if [ "$prot" -eq 5 ]; then ok "$ctx: sin permiso, las 5 pruebas quedan [PROTEGIDO]"; else fail "$ctx: sin permiso, las 5 pruebas quedan [PROTEGIDO]" "protegidas=$prot"; fi
+    elif grep -q '^Permiso ioperm: *CONCEDIDO' <<<"$out"; then
+        # con ioperm, 64h/60h/61h/COM1 deben accederse; CFCh depende de iopl
+        if [ "$ok_np" -ge 4 ] && ! grep -qE '^Puerto (6[014]h|3F8h).*PROTEGIDO' <<<"$out"; then
+            ok "$ctx: con permiso, acceso real a 60h/61h/64h/3F8h"
+        else
+            fail "$ctx: con permiso, acceso real a 60h/61h/64h/3F8h" "$(grep '^Puerto' <<<"$out" | tr '\n' '|')"
+        fi
+        if ! grep -q '\[ERROR\]' <<<"$out"; then ok "$ctx: 61h escritura/lectura consistente"; else fail "$ctx: 61h escritura/lectura consistente"; fi
+    else
+        fail "$ctx: línea de permiso ioperm"
+    fi
+}
+out="$("$BIN" puertos 2>&1)"; rc=$?
+verificar_puertos "usuario" "$out" "$rc"
+
+anchos=0
+for inst in "PUERTO_IN +port_in8, +al" "PUERTO_IN +port_in16, +ax" "PUERTO_IN +port_in32, +eax" \
+            "PUERTO_OUT +port_out8, +al" "PUERTO_OUT +port_out16, +ax" "PUERTO_OUT +port_out32, +eax"; do
+    grep -qE "^$inst" src/mod/ports.asm && anchos=$((anchos + 1))
+done
+if [ "$anchos" -eq 6 ]; then ok "IN/OUT de 8, 16 y 32 bits en el código"; else fail "IN/OUT de 8, 16 y 32 bits en el código" "instancias=$anchos/6"; fi
+
+out="$("$BIN" _puertos_senales 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && grep -q '^manejadores=ok' <<<"$out"; then ok "handlers de señales restaurados al terminar"; else fail "handlers de señales restaurados al terminar" "rc=$rc $(grep manejadores <<<"$out")"; fi
+
+if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    out="$(sudo -n "$BIN" puertos 2>&1)"; rc=$?
+    verificar_puertos "sudo" "$out" "$rc"
+else
+    echo "  [OMITE] prueba con sudo (no disponible sin contraseña)"
+fi
+
+# -----------------------------------------------------------------------------
+# (los módulos M3..M6 agregan aquí sus secciones)
 
 echo
 echo "Resultado: $PASS pasan, $FAIL fallan"
