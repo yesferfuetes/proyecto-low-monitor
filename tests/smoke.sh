@@ -195,7 +195,45 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# (los módulos M3..M6 agregan aquí sus secciones)
+echo "== M3: diagnóstico de memoria =="
+out="$("$BIN" memoria 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ]; then ok "código de salida 0"; else fail "código de salida 0" "rc=$rc $(grep ERROR <<<"$out")"; fi
+n=$(grep -cE '^Patrón (0xAA|0x55|incremental): +PASADA \(0 errores\)' <<<"$out")
+if [ "$n" -eq 3 ]; then ok "patrones 0xAA, 0x55 e incremental: PASADA"; else fail "patrones 0xAA, 0x55 e incremental: PASADA" "$(grep '^Patrón' <<<"$out" | tr '\n' '|')"; fi
+
+# memoria total: "N UNIDAD" vs MemTotal de /proc/meminfo, tolerancia de 1 unidad
+total="$(grep '^Memoria total:' <<<"$out" | sed -E 's/^Memoria total: +//; s/ detectada$//')"
+kb=$(awk '/^MemTotal:/ { print $2 }' /proc/meminfo)
+if awk -v t="$total" -v kb="$kb" 'BEGIN {
+        split(t, p, " "); u = 1
+        if (p[2] == "KB") u = 1024; else if (p[2] == "MB") u = 1048576
+        else if (p[2] == "GB") u = 1073741824; else if (p[2] == "TB") u = 1099511627776
+        d = p[1] * u - kb * 1024; if (d < 0) d = -d
+        exit !(d <= u) }'; then
+    ok "memoria total = MemTotal de /proc/meminfo ($total)"
+else
+    fail "memoria total = MemTotal de /proc/meminfo" "$total vs ${kb} kB"
+fi
+if grep -qE '^Escritura \(NT\): +[1-9][0-9]* MB/s' <<<"$out" && grep -qE '^Verificación: +[1-9][0-9]* MB/s' <<<"$out"; then
+    ok "ancho de banda medido (escritura y verificación)"
+else
+    fail "ancho de banda medido (escritura y verificación)"
+fi
+
+out="$("$BIN" _memtest_inject 2>&1)"; rc=$?
+if [ "$rc" -eq 0 ] && grep -qE '^Patrón 0xAA: +FALLIDA \(3 bits corruptos, primer error en \+50h\)' <<<"$out" \
+   && [ "$(grep -cE 'PASADA \(0 errores\)' <<<"$out")" -eq 2 ]; then
+    ok "inyección: detecta exactamente 3 bits corruptos en +50h"
+else
+    fail "inyección: detecta exactamente 3 bits corruptos en +50h" "$(grep '^Patrón' <<<"$out" | tr '\n' '|')"
+fi
+
+usos=0
+for inst in movnti sfence prefetcht0 popcnt; do grep -qE "^[[:space:]]+$inst[[:space:]]" src/mod/memtest.asm && usos=$((usos + 1)); done
+if [ "$usos" -eq 4 ]; then ok "usa MOVNTI, SFENCE, PREFETCHT0 y POPCNT"; else fail "usa MOVNTI, SFENCE, PREFETCHT0 y POPCNT" "$usos/4"; fi
+
+# -----------------------------------------------------------------------------
+# (los módulos M4..M6 agregan aquí sus secciones)
 
 echo
 echo "Resultado: $PASS pasan, $FAIL fallan"

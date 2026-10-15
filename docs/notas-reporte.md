@@ -26,6 +26,17 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
 
 ## M3 — Diagnóstico de memoria
 
+- Un proceso de usuario no ve la RAM física: se prueba un bloque de 64 MiB que el kernel asigna con
+  `mmap` + `MAP_POPULATE` (páginas físicas reales, sin fallos de página durante la medición).
+- Patrones: 0xAA (1010…), 0x55 (su complemento: cada bit pasa por 0 y por 1) e incremental (qword i = i,
+  detecta alias de direcciones). Bits corruptos = POPCNT(leído XOR esperado).
+- Escritura con `MOVNTI` + `SFENCE` (non-temporal: no contamina la caché y obliga a verificar desde RAM);
+  lectura con `PREFETCHT0` a 512 B.
+- Autoverificación: `_memtest_inject` voltea 3 bits conocidos y el detector informa exactamente 3,
+  primer error en +50h.
+- En WSL2 la "memoria total" es la de la VM (por defecto ~50 % del host, configurable en `.wslconfig`).
+- _(completar con la salida real de WSL2 y el ancho de banda medido)_
+
 ## M4 — Rendimiento del CPU
 
 ## M5 — Jerarquía de memoria

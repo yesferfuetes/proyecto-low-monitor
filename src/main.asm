@@ -26,7 +26,7 @@ default rel
 
 extern mod_cpu_run, mod_ports_run, mod_mem_run
 extern mod_perf_run, mod_cache_run, mod_simd_run
-extern selftest_run, ports_senales_run
+extern selftest_run, ports_senales_run, memtest_inject_run
 
 CMD_NOMBRE          equ 0             ; offset del puntero al nombre
 CMD_ENCAB           equ 8             ; offset del puntero al encabezado
@@ -37,7 +37,7 @@ CMD_TAM             equ 24            ; tamaño de un registro de la tabla
 section .data
 ; Constantes, strings, tablas de datos
 ; =============================================================================
-STR msg_banner, "LowMonitor v0.3.0 - Diagnóstico y monitorización de hardware x86-64", 10
+STR msg_banner, "LowMonitor v0.4.0 - Diagnóstico y monitorización de hardware x86-64", 10
 STR msg_uso, "Uso: lowmonitor [todo|cpu|puertos|memoria|rendimiento|jerarquia|simd|ayuda]", 10
 STR msg_desconocido, "lowmonitor: comando desconocido: "
 STR msg_demasiados, "lowmonitor: se esperaba como máximo un argumento", 10
@@ -56,6 +56,7 @@ c_h             db "-h", 0
 c_help          db "--help", 0
 c_selftest      db "_selftest", 0        ; oculto: autoverificación de la librería
 c_senales       db "_puertos_senales", 0 ; oculto: verifica restauración de handlers (M2)
+c_inyectar      db "_memtest_inject", 0  ; oculto: M3 con 3 bits volteados a propósito
 
 ; ---- Encabezados de módulo -----------------------------------------------------
 h_m1            db "== [M1] Identificación del CPU ==", 10, 0
@@ -80,6 +81,7 @@ cmd_tabla:
     dq c_help,        0,    mostrar_ayuda
     dq c_selftest,    0,    selftest_run
     dq c_senales,     0,    ports_senales_run
+    dq c_inyectar,    0,    memtest_inject_run
     dq 0                                     ; fin de la tabla
 
 ; =============================================================================
