@@ -35,6 +35,32 @@ SIZE_UNIT_MAX   equ 4                   ; índice de "TB"
 STR txt_si, "Sí"
 STR txt_no, "No"
 STR msg_write_err, "lowmonitor: error al escribir en la salida estándar", 10
+STR txt_errno, "errno "
+
+; Nombres de errno frecuentes: pares (número, cadena C), fin con 0
+e_eperm         db "EPERM", 0
+e_enoent        db "ENOENT", 0
+e_eintr         db "EINTR", 0
+e_enomem        db "ENOMEM", 0
+e_eacces        db "EACCES", 0
+e_enodev        db "ENODEV", 0
+e_einval        db "EINVAL", 0
+e_enospc        db "ENOSPC", 0
+e_enosys        db "ENOSYS", 0
+e_eopnotsupp    db "EOPNOTSUPP", 0
+align 8
+tabla_errno:
+    dq EPERM, e_eperm
+    dq ENOENT, e_enoent
+    dq EINTR, e_eintr
+    dq ENOMEM, e_enomem
+    dq EACCES, e_eacces
+    dq ENODEV, e_enodev
+    dq EINVAL, e_einval
+    dq ENOSPC, e_enospc
+    dq ENOSYS, e_enosys
+    dq EOPNOTSUPP, e_eopnotsupp
+    dq 0
 
 ; =============================================================================
 section .bss align=64
@@ -49,7 +75,7 @@ numbuf          resb NUMBUF_SIZE        ; área temporal para convertir números
 section .text
 ; =============================================================================
 global out_str, out_cstr, out_char, out_nl, out_spaces
-global out_u64, out_i64, out_hex, out_fixed, out_size, out_bool, out_flush
+global out_u64, out_i64, out_hex, out_fixed, out_size, out_bool, out_flush, out_errno
 
 ; -----------------------------------------------------------------------------
 ; out_str — copia una cadena de longitud conocida al buffer de salida
@@ -331,6 +357,33 @@ out_bool:
     lea     rdi, [txt_no]
     mov     rsi, txt_no_len
     jmp     out_str
+
+; -----------------------------------------------------------------------------
+; out_errno — imprime el nombre de un error devuelto por una syscall
+; Entradas : rdi = -errno (valor negativo tal como lo deja el kernel en rax)
+; Ejemplo  : -13 -> "EACCES"; un errno sin nombre en la tabla -> "errno N"
+; -----------------------------------------------------------------------------
+out_errno:
+    neg     rdi                         ; errno positivo
+    lea     rax, [tabla_errno]
+.buscar:
+    mov     rcx, [rax]
+    test    rcx, rcx                    ; fin de la tabla
+    jz      .numero
+    cmp     rcx, rdi
+    je      .nombre
+    add     rax, 16
+    jmp     .buscar
+.nombre:
+    mov     rdi, [rax + 8]
+    jmp     out_cstr
+.numero:
+    push    rdi                         ; guardar errno (y alinear la pila)
+    lea     rdi, [txt_errno]
+    mov     rsi, txt_errno_len
+    call    out_str
+    pop     rdi
+    jmp     out_u64
 
 ; -----------------------------------------------------------------------------
 ; out_flush — envía el contenido del buffer a stdout con write(2)

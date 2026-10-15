@@ -233,7 +233,46 @@ for inst in movnti sfence prefetcht0 popcnt; do grep -qE "^[[:space:]]+$inst[[:s
 if [ "$usos" -eq 4 ]; then ok "usa MOVNTI, SFENCE, PREFETCHT0 y POPCNT"; else fail "usa MOVNTI, SFENCE, PREFETCHT0 y POPCNT" "$usos/4"; fi
 
 # -----------------------------------------------------------------------------
-# (los módulos M4..M6 agregan aquí sus secciones)
+echo "== M4: rendimiento del CPU =="
+out="$("$BIN" rendimiento 2>&1)"; rc=$?
+campo() { awk -v k="$1:" 'index($0, k) == 1 { s = substr($0, length(k) + 1); sub(/^ +/, "", s); print s; exit }' <<<"$out"; }
+if [ "$rc" -eq 0 ]; then ok "código de salida 0"; else fail "código de salida 0" "rc=$rc"; fi
+
+ghz="$(campo 'Frecuencia (TSC)' | cut -d' ' -f1)"
+if awk -v g="$ghz" 'BEGIN { exit !(g >= 0.5 && g <= 10) }'; then ok "frecuencia TSC razonable ($ghz GHz)"; else fail "frecuencia TSC razonable" "'$ghz'"; fi
+# Referencia: en x86 Linux calibra el TSC al arrancar y BogoMIPS = 2 x frecuencia del TSC.
+# ("cpu MHz" NO sirve: es la frecuencia actual del núcleo, con turbo.)
+bogo="$(awk -F': ' '/^bogomips/ { print $2; exit }' /proc/cpuinfo)"
+if [ -n "$bogo" ] && [ "$(awk -F': ' '/^vendor_id/ { print $2; exit }' /proc/cpuinfo)" != "VirtualApple" ]; then
+    if awk -v g="$ghz" -v b="$bogo" 'BEGIN { m = b / 2; d = g * 1000 - m; if (d < 0) d = -d; exit !(d <= m * 0.10) }'; then
+        ok "frecuencia TSC dentro de ±10% de BogoMIPS/2 ($bogo)"
+    else
+        fail "frecuencia TSC dentro de ±10% de BogoMIPS/2" "$ghz GHz vs BogoMIPS $bogo"
+    fi
+else
+    echo "  [OMITE] comparación con BogoMIPS (no disponible o emulación)"
+fi
+
+ipc_dep="$(campo 'Carga dependiente' | sed -E 's/.*IPC ([0-9.]+).*/\1/')"
+ipc_ind="$(campo 'Carga independiente' | sed -E 's/.*IPC ([0-9.]+).*/\1/')"
+if [ "$(awk -F': ' '/^vendor_id/ { print $2; exit }' /proc/cpuinfo)" = "VirtualApple" ]; then
+    echo "  [OMITE] cota de IPC dependiente: bajo Rosetta el TSC no corresponde a los ciclos del núcleo"
+elif awk -v d="$ipc_dep" 'BEGIN { exit !(d >= 0.3 && d <= 2.5) }'; then ok "IPC dependiente plausible ($ipc_dep)"
+else fail "IPC dependiente plausible (0.3-2.5)" "$ipc_dep"; fi
+if awk -v d="$ipc_dep" -v i="$ipc_ind" 'BEGIN { exit !(i > d) }'; then ok "IPC independiente ($ipc_ind) > dependiente ($ipc_dep)"; else fail "IPC independiente > dependiente" "$ipc_ind vs $ipc_dep"; fi
+
+gf="$(campo 'Throughput' | cut -d' ' -f1)"
+if awk -v g="$gf" 'BEGIN { exit !(g > 0) }'; then ok "GFLOPS > 0 ($gf)"; else fail "GFLOPS > 0" "'$gf'"; fi
+if grep -qE '^CPI promedio: +[0-9]+\.[0-9]{2} \(estimado con TSC\)$' <<<"$out" && grep -qE '^IPC: +[0-9]+\.[0-9]{2} ' <<<"$out"; then
+    ok "CPI promedio e IPC con formato numérico"
+else
+    fail "CPI promedio e IPC con formato numérico"
+fi
+if grep -qE '^Contadores PMU: +(CPI [0-9]|no disponibles \()' <<<"$out"; then ok "línea de contadores PMU ($(campo 'Contadores PMU'))"; else fail "línea de contadores PMU"; fi
+if grep -qE '^Ciclos totales: +[1-9][0-9]*$' <<<"$out"; then ok "ciclos totales > 0"; else fail "ciclos totales > 0"; fi
+
+# -----------------------------------------------------------------------------
+# (los módulos M5..M6 agregan aquí sus secciones)
 
 echo
 echo "Resultado: $PASS pasan, $FAIL fallan"

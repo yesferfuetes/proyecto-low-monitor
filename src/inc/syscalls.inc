@@ -18,6 +18,7 @@
 ; ---- Números de syscall ------------------------------------------------------
 SYS_READ            equ 0
 SYS_WRITE           equ 1
+SYS_CLOSE           equ 3
 SYS_MMAP            equ 9
 SYS_MUNMAP          equ 11
 SYS_RT_SIGACTION    equ 13
@@ -47,6 +48,8 @@ EACCES              equ 13
 EINVAL              equ 22
 ENOSPC              equ 28
 ENOSYS              equ 38
+ENODEV              equ 19
+EOPNOTSUPP          equ 95
 ENOENT              equ 2
 MAX_ERRNO           equ 4095          ; rax >= -4095 (sin signo) indica error
 
@@ -69,5 +72,18 @@ UC_RIP              equ 0xA8          ; offsetof(ucontext_t, uc_mcontext.gregs[R
 
 ; ---- Relojes -----------------------------------------------------------------
 CLOCK_MONOTONIC     equ 1
+
+; ---- perf_event_open / ioctl ----------------------------------------------------
+PERF_TYPE_HARDWARE  equ 0
+PERF_COUNT_HW_CPU_CYCLES   equ 0      ; ciclos reales del núcleo
+PERF_COUNT_HW_INSTRUCTIONS equ 1      ; instrucciones retiradas
+PERF_ATTR_TAM       equ 128           ; sizeof(struct perf_event_attr) que se declara
+PERF_ATTR_FLAGS     equ 40            ; offset del campo de bits (disabled, exclude_*...)
+PERF_FLAG_DISABLED  equ 1 << 0        ; crear detenido
+PERF_FLAG_EXCL_KERNEL equ 1 << 5      ; sólo contar en modo usuario
+PERF_FLAG_EXCL_HV   equ 1 << 6        ; no contar en el hipervisor
+PERF_EVENT_IOC_ENABLE  equ 0x2400
+PERF_EVENT_IOC_DISABLE equ 0x2401
+PERF_EVENT_IOC_RESET   equ 0x2403
 
 %endif ; SYSCALLS_INC

@@ -39,6 +39,19 @@ decisiones. Al final se condensa en el PDF de máx. 5 páginas.
 
 ## M4 — Rendimiento del CPU
 
+- Frecuencia del TSC calibrada contra `CLOCK_MONOTONIC` (ciclos durante 100 ms / ns reales, mediana de 3).
+- Medición serializada: `lfence; rdtsc; lfence` al inicio y `rdtscp; lfence` al final; mínimo de 5
+  repeticiones menos el costo de medir "nada". Proceso fijado a una CPU con `sched_setaffinity`.
+- Instrucciones conocidas por construcción (10 por vuelta, 10⁷ vueltas). Cadena dependiente de `add`
+  → IPC ≈ 1 (latencia); 8 sumas independientes → IPC > 1 (paralelismo a nivel de instrucción, varias ALUs).
+- El TSC cuenta ciclos de referencia (frecuencia nominal), no del núcleo: con turbo el CPI "TSC" sale
+  menor que el real. Bajo Rosetta el TSC emulado va a ~1 GHz y el IPC aparente se infla (~5).
+- Observado en CI (runner con turbo): TSC 2.59 GHz mientras `cpu MHz` marcaba 4.2 GHz; el IPC de la cadena
+  dependiente dio 2.04 ≈ 1.25 × (4.2 / 2.59): el TSC subestima los ciclos reales en la proporción del turbo.
+- Contadores PMU (`perf_event_open`, ciclos e instrucciones reales) se usan si el kernel lo permite; en
+  Ubuntu `perf_event_paranoid=4` los niega a usuarios (`EACCES`) y en VMs suelen no existir.
+- _(completar con la salida real de WSL2: frecuencia, IPC de cada carga y GFLOPS)_
+
 ## M5 — Jerarquía de memoria
 
 ## M6 — SIMD

@@ -12,7 +12,7 @@ el rendimiento del CPU, la latencia de cada nivel de la jerarquía de memoria y 
 | M1 Identificación del CPU | `cpu` | listo |
 | M2 Monitor de puertos E/S | `puertos` | listo |
 | M3 Diagnóstico de memoria | `memoria` | listo |
-| M4 Rendimiento del CPU | `rendimiento` | pendiente |
+| M4 Rendimiento del CPU | `rendimiento` | listo |
 | M5 Jerarquía de memoria | `jerarquia` | pendiente |
 | M6 Operaciones SIMD (bonus) | `simd` | pendiente |
 
