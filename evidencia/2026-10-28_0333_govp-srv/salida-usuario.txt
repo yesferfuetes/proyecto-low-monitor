@@ -1,0 +1,76 @@
+$ bin/lowmonitor todo
+LowMonitor v0.7.0 - Diagnóstico y monitorización de hardware x86-64
+== [M1] Identificación del CPU ==
+Fabricante:       AuthenticAMD
+Procesador:       AMD EPYC 7763 64-Core Processor
+Arquitectura:     x86_64
+Familia:          25 (19h)
+Modelo:           1 (01h)
+Stepping:         1
+Hilos lógicos:    2
+Hipervisor:       Microsoft Hv
+Características:  RDTSCP, TSC invariante, CLFLUSH, POPCNT
+Extensiones:      SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, FMA, AVX2
+AVX (SO):         Habilitado (XCR0 guarda YMM)
+AVX-512 (SO):     No soportado por la CPU
+
+== [M2] Monitor de puertos E/S ==
+Permiso ioperm:        DENEGADO (EPERM) - ejecute con sudo para acceso real
+Permiso iopl(3):       DENEGADO (EPERM)
+IOPL (RFLAGS[13:12]):  0
+Puerto 64h (estado):   [PROTEGIDO] #GP capturado (SIGSEGV)
+Puerto 60h (teclado):  [PROTEGIDO] #GP capturado (SIGSEGV)
+Puerto 61h (panel):    [PROTEGIDO] #GP capturado (SIGSEGV)
+Puerto 3F8h (COM1):    [PROTEGIDO] #GP capturado (SIGSEGV)
+Puerto CFCh (PCI 32b): [PROTEGIDO] #GP capturado (SIGSEGV)
+
+== [M3] Diagnóstico de memoria ==
+Memoria total:      3907 MB detectada
+Memoria libre:      2284 MB
+Bloque probado:     64 MB (mmap + MAP_POPULATE)
+Patrón 0xAA:        PASADA (0 errores)
+Patrón 0x55:        PASADA (0 errores)
+Patrón incremental: PASADA (0 errores)
+Escritura (NT):     25091 MB/s
+Verificación:       19630 MB/s
+
+== [M4] Monitor de rendimiento del CPU ==
+CPU fijada:           0 (sched_setaffinity)
+Frecuencia (TSC):     2.44 GHz
+Costo de medición:    73 ciclos
+Carga dependiente:    100000000 instr, 60941227 ciclos, CPI 0.60, IPC 1.64
+Carga independiente:  100000000 instr, 17231855 ciclos, CPI 0.17, IPC 5.80
+Carga FP (SSE2):      100000000 instr, 22952360 ciclos, CPI 0.22, IPC 4.35, 80000000 FLOP
+CPI promedio:         0.33 (estimado con TSC)
+IPC:                  2.96 (estimado con TSC)
+Throughput:           8.52 GFLOPS (SSE2 escalar)
+Contadores PMU:       no disponibles (EACCES)
+Ciclos totales:       101125442
+
+== [M5] Gestión jerárquica de memoria ==
+Nivel        Tamaño      Por acceso   Cadena   (ciclos TSC)
+Registros    -           20.1         0.7
+L1 caché     32 KB       17.4         3.1
+L2 caché     512 KB      22.2         9.5
+L3 caché     32 MB       49.5         32.8
+RAM          3907 MB     111.6        199.1
+RAM / L1:    64x
+Conjuntos de trabajo: L1 16 KB, L2 272 KB, L3 2 MB, RAM 128 MB
+
+Prefetch sobre RAM (ciclos por línea de 64 B):
+  Aleatorio (cadena):       199.1
+  Secuencial:               4.6
+  Secuencial + prefetcht0:  5.1
+
+== [M6] Operaciones SIMD ==
+Escalar (referencia):     Sí   3.16 GFLOPS  x1.0
+SSE2 (128b, 4 lanes):     Sí   suma [OK]  mult [OK]  comp [OK]  14.49 GFLOPS  x4.5
+AVX2 (256b, 8 lanes):     Sí   suma [OK]  mult [OK]  comp [OK]  29.30 GFLOPS  x9.2
+AVX-512 (512b, 16 lanes): No soportado por la CPU
+FMA (256b):               Sí   29.19 GFLOPS  x9.2
+AVX2 habilitado:          Sí
+Throughput:               8 operaciones paralelas (AVX2)
+Benchmark:                29.30 GFLOPS (AVX2)
+Escritura normal 64 MB:   20663 MB/s
+Escritura NT 64 MB:       25076 MB/s
+[código de salida: 0]
