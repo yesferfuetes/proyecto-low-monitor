@@ -42,7 +42,7 @@ SRCS := $(shell find $(SRC_DIR) -name '*.asm' | sort)
 OBJS := $(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.o,$(SRCS))
 DEPS := $(OBJS:.o=.d)
 
-.PHONY: all run test debug info evidencia check-tools clean help
+.PHONY: all run test debug info evidencia entrega check-tools clean help
 
 all: $(TARGET)
 
@@ -75,6 +75,16 @@ info: $(TARGET)
 evidencia: $(TARGET)
 	@bash scripts/evidencia.sh $(TARGET)
 
+# Binario de entrega: compilación limpia sin símbolos, copiado a entrega/ con su SHA-256
+entrega:
+	$(MAKE) clean
+	$(MAKE) DEBUG=0
+	@mkdir -p entrega
+	cp $(TARGET) entrega/$(NAME)
+	cd entrega && sha256sum $(NAME) > $(NAME).sha256
+	@file entrega/$(NAME)
+	@cat entrega/$(NAME).sha256
+
 check-tools:
 	@command -v $(NASM) >/dev/null 2>&1 || { echo "Falta nasm  -> sudo apt install nasm"; exit 1; }
 	@command -v $(LD)   >/dev/null 2>&1 || { echo "Falta ld    -> sudo apt install binutils"; exit 1; }
@@ -97,5 +107,6 @@ help:
 	@echo "  debug        abre gdb sobre el binario"
 	@echo "  info         cabecera ELF y tamaños de sección"
 	@echo "  evidencia    guarda salida + datos del sistema en evidencia/"
+	@echo "  entrega      binario release (sin símbolos) + SHA-256 en entrega/"
 	@echo "  check-tools  verifica nasm >= 2.15, ld y arquitectura"
 	@echo "  clean        borra build/ y bin/"
