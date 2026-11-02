@@ -35,12 +35,21 @@ sudo ./bin/lowmonitor puertos   # acceso real a puertos E/S (opcional)
 make help       # todos los objetivos
 ```
 
-El binario precompilado (ELF64) está en [Releases](../../releases).
+## Binario precompilado
+
+`entrega/lowmonitor` es el ejecutable ELF64 x86-64 (estático, sin libc, sin símbolos) listo para usar en
+Linux x86-64 o WSL2; su SHA-256 está en `entrega/lowmonitor.sha256`. Se regenera con `make entrega`.
+
+```bash
+sha256sum -c entrega/lowmonitor.sha256
+./entrega/lowmonitor
+```
 
 ## Estructura
 
 ```
 src/            código fuente NASM (main, lib/, mod/, inc/)
+entrega/        binario ELF64 de entrega y su SHA-256
 tests/          pruebas automáticas (make test)
 docs/           decisiones técnicas, guía WSL2, notas y reporte
 evidencia/      salidas reales de ejecución para el reporte

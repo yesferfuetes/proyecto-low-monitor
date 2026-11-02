@@ -10,3 +10,4 @@ Makefile text eol=lf
 *.pdf   binary
 *.png   binary
 *.jpg   binary
+entrega/lowmonitor binary
