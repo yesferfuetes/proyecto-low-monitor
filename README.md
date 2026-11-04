@@ -65,6 +65,11 @@ Decisiones técnicas en [docs/decisiones.md](docs/decisiones.md).
 
 Probar en Windows: [docs/entorno-windows-wsl.md](docs/entorno-windows-wsl.md).
 
-## Autor
+## Equipo de desarrollo — Grupo 6
 
-Yesfer Fuentes — código original desarrollado para el curso.
+- Yesfer Bany Fuentes Orozco
+- Astrid Noemí Herrera Solórzano
+- Fatima Paola Ranero García
+- Gilma Odalis Velasquez Pérez
+
+Curso Arquitectura de Computadoras 2 · Docente: Ing. René Ornélyz · Código original desarrollado para el curso.
