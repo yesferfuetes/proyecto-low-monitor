@@ -51,12 +51,15 @@ sha256sum -c entrega/lowmonitor.sha256
 src/            código fuente NASM (main, lib/, mod/, inc/)
 entrega/        binario ELF64 de entrega y su SHA-256
 tests/          pruebas automáticas (make test)
-docs/           decisiones técnicas, guía WSL2, notas y reporte
+docs/           reporte técnico (reporte/), decisiones técnicas, guía WSL2 y notas
 evidencia/      salidas reales de ejecución para el reporte
 scripts/        utilidades (evidencia)
 ```
 
 ## Documentación
+
+**Reporte técnico:** [docs/reporte/Reporte-Tecnico-LowMonitor-Grupo6.pdf](docs/reporte/Reporte-Tecnico-LowMonitor-Grupo6.pdf)
+— arquitectura del programa, descripción de cada módulo con su salida real, compilación y pruebas.
 
 Decisiones técnicas en [docs/decisiones.md](docs/decisiones.md).
 
